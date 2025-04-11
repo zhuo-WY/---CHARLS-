@@ -1,0 +1,32 @@
+#一、charls数据库的年龄构成：2011年先询问受访者出生年月日（ba002），如果受访者不知道则直接询问年龄（ba004），因此ba002的缺失值可能在ba004中得到填补
+
+D_2011demo <- charls2011原始合集[,c('id','ba004','ba002_1','ba002_2','ba002_3')]
+
+D_2011demo$ba002_2[D_2011demo$ba002_2==0] <-1
+D_2011demo$ba002_3[D_2011demo$ba002_3==0] <-1
+#month=2,day=30或29时，将day=28
+D_2011demo$ba002_3[D_2011demo$ba002_2==2 & (D_2011demo$ba002_3==30|D_2011demo$ba002_3==29)] <-28
+#组合年月日
+D_2011demo$birth <- as.Date(paste(D_2011demo$ba002_1,D_2011demo$ba002_2,D_2011demo$ba002_3,sep='-'))
+
+#年龄
+D_2011demo$Age<-round(difftime('2011-3-12',D_2011demo$birth)/365)
+#去掉day
+D_2011demo$Age<-as.numeric(gsub("\\D","",D_2011demo$Age))
+#删除不需要的列
+D_2011demo<- subset(D_2011demo,select = -c(ba002_1,ba002_2,ba002_3,birth))
+
+
+# 用 Age 列的值填充 ba004 列的缺失值
+D_2011demo$ba004[is.na(D_2011demo$ba004)] <- D_2011demo$Age[is.na(D_2011demo$ba004)]
+table(D_2011demo$ba004,useNA = 'ifan') #23
+table(D_2011demo$Age,useNA = 'ifan') #54
+
+# 找出两个变量都为缺失值的个案
+both_na <- is.na(D_2011demo$ba004) & is.na(D_2011demo$Age)
+
+# 计算个案数量
+count_both_na <- sum(both_na)
+
+# 输出结果
+print(paste("两个变量都存在缺失值的个案数量为:", count_both_na)) 
